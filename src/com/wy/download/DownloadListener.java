@@ -9,9 +9,9 @@ package com.wy.download;
 public interface DownloadListener {
     /**
      * 下载完成
-     * @param filepath
+     * @param task
      */
-    void onDownloadFinish(String filepath);
+    void onDownloadFinish(DownloadTask task);
 
     /**
      * 开始下载

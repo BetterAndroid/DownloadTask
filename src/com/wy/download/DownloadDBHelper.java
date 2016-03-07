@@ -225,9 +225,9 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
      * 从数据库中删除一条下载任务<BR>
      * @param downloadTask DownloadTask
     */
-    public void delete(DownloadTask downloadTask) {
+    public void delete(String downloadUrl) {
         SQLiteDatabase db = getWritableDatabase();
-        db.delete(TABLE_NAME, FIELD_URL + "=?", new String[]{downloadTask.downloadUrl });
+        db.delete(TABLE_NAME, FIELD_URL + "=?", new String[]{downloadUrl });
     }
 
     /*

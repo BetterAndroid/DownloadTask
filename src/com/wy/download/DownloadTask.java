@@ -123,7 +123,8 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
         if(downloadState == DownloadState.FINISHED) {
-            onDownloadFinish(dirPath+File.separator+fileName);
+//            onDownloadFinish(dirPath+File.separator+fileName);
+            onDownloadFinish(this);
         } else if(downloadState == DownloadState.FAILED) {
             onDownloadFail();
         } else if(downloadState == DownloadState.PAUSE) {
@@ -201,7 +202,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
 
     public void startDownload() {
         if(saveFile.exists()) {
-            onDownloadFinish(dirPath + fileName);
+            onDownloadFinish(this);
             return;
         }
         mPause = false;
@@ -222,9 +223,10 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     }
 
     @Override
-    public void onDownloadFinish(String filepath) {
+    public void onDownloadFinish(DownloadTask task) {
         targetFile.renameTo(saveFile);
         Toast.makeText(context, "onDownloadFinish", Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
@@ -250,5 +252,6 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     @Override
     public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
 //        Toast.makeText(context, "onDownloadProgress", Toast.LENGTH_SHORT).show();
+        DownloadManager.getInstance(context).updateDownloadTask(this);
     }
 }

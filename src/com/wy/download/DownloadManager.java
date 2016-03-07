@@ -2,6 +2,7 @@ package com.wy.download;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -13,10 +14,19 @@ import android.webkit.URLUtil;
 /*
  * 单例的下载管理器，用于管理所有的下载任务
 */
-
 public class DownloadManager {
     private static final String TAG = "DownloadManager";
+    private static final String DOWNLOADDB = "download.db";
     private Context mContext;
+
+    //    private static int mMaxTask = 0;
+    /**
+     * 下载的数据库管理器
+     */
+    private DownloadDBHelper mDownloadDBHelper;
+    private HashMap<String, DownloadTask> mDownloadMap = new HashMap<String, DownloadTask>();
+    private HashMap<String, CopyOnWriteArraySet<DownloadListener>> mDownloadListenerMap = new HashMap<String, CopyOnWriteArraySet<DownloadListener>>();;
+
     private static DownloadManager instance;
      /* *
      * 获得一个单例的下载管理器
@@ -39,19 +49,9 @@ public class DownloadManager {
      */
     private DownloadManager(Context context) {
         this.mContext = context;
-        mDownloadMap = new HashMap<String, DownloadTask>();
-        mDownloadListenerMap = new HashMap<String, CopyOnWriteArraySet<DownloadListener>>();
         // 数据库操作对象实例化
-        mDownloadDBHelper = new DownloadDBHelper(context, "download.db");
+        mDownloadDBHelper = new DownloadDBHelper(context, DOWNLOADDB);
     }
-
-    private static int mMaxTask = 0;
-    /**
-     * 下载的数据库管理器
-     */
-    private DownloadDBHelper mDownloadDBHelper;
-    private HashMap<String, DownloadTask> mDownloadMap;
-    private HashMap<String, CopyOnWriteArraySet<DownloadListener>> mDownloadListenerMap;
 
     /**
      * 开始一个下载任务，如果一个相同的下载任务已经存在，将回退出，留下一个“任务存在”的日志
@@ -59,41 +59,56 @@ public class DownloadManager {
      * @param listener
      */
     public void startDownload(String downloadUrl, DownloadListener listener) {
-        if (TextUtils.isEmpty(downloadUrl) || !URLUtil.isHttpUrl(downloadUrl)) {
-            Log.w(TAG, "invalid http url: " + downloadUrl);
-            throw new IllegalArgumentException("invalid http url");
-        }
-        if (mDownloadMap.containsKey(downloadUrl)) {
-            Log.w(TAG, "task existed");
+        if(parseDownloadUrl(downloadUrl)) {
             return;
         }
-        if (mMaxTask > 0 && mDownloadMap.size() > mMaxTask) {
-            Log.w(TAG, "trial version can only add " + mMaxTask + " download task, please buy  a lincense");
-            return;
+        if(mDownloadListenerMap.get(downloadUrl) == null) {
+            CopyOnWriteArraySet<DownloadListener> dl = new CopyOnWriteArraySet<DownloadListener>();
+            mDownloadListenerMap.put(downloadUrl, dl);
         }
-        if (null == mDownloadListenerMap.get(downloadUrl)) {
-            CopyOnWriteArraySet<DownloadListener> set = new CopyOnWriteArraySet<DownloadListener>();
-            mDownloadListenerMap.put(downloadUrl, set);
-        }
-        // 保存到数据库，如果下载任务是有效的，并开始下载。
-        /*if (!downloadTask.equals(queryDownloadTask(downloadUrl))) {
-            insertDownloadTask(downloadTask);
-        }*/
+        mDownloadListenerMap.get(downloadUrl).add(listener);
 
-        DownloadTask task = DownloadTask.buildTask(mContext, downloadUrl);
+        // 保存到数据库，如果下载任务是有效的，并开始下载。
+        DownloadTask task = mDownloadDBHelper.query(downloadUrl);
+        if(task == null) {
+            task = DownloadTask.buildTask(mContext, downloadUrl);
+            mDownloadDBHelper.insert(task);
+        }
         mDownloadMap.put(downloadUrl, task);
         task.startDownload();
     }
 
+    /**
+     * 根据URL判断的状态
+     * @param downloadUrl
+     * @return
+     */
+    private boolean parseDownloadUrl(String downloadUrl) {
+        if(TextUtils.isEmpty(downloadUrl) || !URLUtil.isHttpUrl(downloadUrl)) {
+            throw new IllegalArgumentException("invalid http url");
+        }
+        if (mDownloadMap.containsKey(downloadUrl)) {
+            return true;
+        }
+        /*if (mMaxTask > 0 && mDownloadMap.size() > mMaxTask) {
+            return true;
+        }*/
+        if (null == mDownloadListenerMap.get(downloadUrl)) {
+            CopyOnWriteArraySet<DownloadListener> set = new CopyOnWriteArraySet<DownloadListener>();
+            mDownloadListenerMap.put(downloadUrl, set);
+        }
+        return false;
+    }
+
+
     /*
      * 暂停下载任务
-     *
      * @param downloadTask DownloadTask
     */
     public void pauseDownload(String downloadUrl) {
         if (mDownloadMap.containsKey(downloadUrl)) {
             mDownloadMap.get(downloadUrl).pauseDownload();
-            //mDownloadMap.remove(downloadTask);
+            mDownloadMap.remove(downloadUrl);
         }
     }
 
@@ -102,25 +117,19 @@ public class DownloadManager {
      * @param downloadUrl
     */
     public void continueDownload(String downloadUrl) {
-        if (null == downloadUrl || !URLUtil.isHttpUrl(downloadUrl)) {
-            Log.w(TAG, "invalid http url: " + downloadUrl);
-            throw new IllegalArgumentException("invalid http url");
-        }
-        if (null == mDownloadListenerMap.get(downloadUrl)) {
-            CopyOnWriteArraySet<DownloadListener> set = new CopyOnWriteArraySet<DownloadListener>();
-            mDownloadListenerMap.put(downloadUrl, set);
-        }
+        parseDownloadUrl(downloadUrl);
         //保存到数据库，如果下载任务是有效的，并开始下载。
-        /*if (!downloadTask.equals(queryDownloadTask(downloadTask.url))) {
-            insertDownloadTask(downloadTask);
-        }*/
-        DownloadTask task = DownloadTask.buildTask(mContext, downloadUrl);
+        DownloadTask task = mDownloadDBHelper.query(downloadUrl);
+        if(task == null) {
+            task = DownloadTask.buildTask(mContext, downloadUrl);
+            mDownloadDBHelper.insert(task);
+        }
         mDownloadMap.put(downloadUrl, task);
         task.startDownload();
     }
 
     /*
-     * 停止任务，这种方法不使用。请使用pausedownload相反。
+     * 停止任务，这种方法暂时不使用。请使用pausedownload相反。
      * @param downloadTask DownloadTask
     */
 
@@ -128,15 +137,6 @@ public class DownloadManager {
     public void stopDownload(String downloadUrl) {
         mDownloadMap.get(downloadUrl).stopDownload();
         mDownloadMap.remove(downloadUrl);
-    }
-
-    /*
-     * 从数据库中获取所有的下载任务
-     *
-     * @return DownloadTask list
-    */
-    public List<DownloadTask> getAllDownloadTask() {
-        return mDownloadDBHelper.queryAll();
     }
 
     /*
@@ -149,7 +149,6 @@ public class DownloadManager {
 
     /*
      * 从数据库中获取所有的下载任务
-     *
      * @return DownloadTask list
     */
 
@@ -158,39 +157,37 @@ public class DownloadManager {
     }
 
     /*
-     * 将下载任务插入到数据库中
-     *
-     * @param downloadTask
-    */
-
-    void insertDownloadTask(DownloadTask downloadTask) {
-        mDownloadDBHelper.insert(downloadTask);
-    }
-
-    /*
      * 更新下载任务到数据库
-     *
      * @param downloadTask
     */
-    void updateDownloadTask(DownloadTask downloadTask) {
+    public void updateDownloadTask(DownloadTask downloadTask) {
         mDownloadDBHelper.update(downloadTask);
+        CopyOnWriteArraySet<DownloadListener> ds = mDownloadListenerMap.get(downloadTask.downloadUrl);
+        Iterator<DownloadListener> iterator = ds.iterator();
+        while (iterator.hasNext()) {
+            DownloadListener listener = iterator.next();
+            if(listener == null) {
+                iterator.remove();
+            } else {
+                listener.onDownloadProgress(downloadTask.finishSize, downloadTask.totalSize, 0);
+            }
+        }
     }
 
     /*
      * 删除从下载队列下载任务，删除它的侦听器，并从数据库中删除它。
-     *
      * @param downloadTask
     */
-    public void deleteDownloadTask(DownloadTask downloadTask) {
-        if (downloadTask.downloadState != DownloadState.FINISHED) {
-            for (DownloadListener l : getListeners(downloadTask.downloadUrl)) {
+    public void deleteDownloadTask(DownloadTask task) {
+        if (task.downloadState != DownloadState.FINISHED) {
+            for (DownloadListener l : getListeners(task.downloadUrl)) {
                 l.onDownloadStop();
             }
-            getListeners(downloadTask.downloadUrl).clear();
+            getListeners(task.downloadUrl).clear();
         }
-        mDownloadMap.remove(downloadTask);
-        mDownloadListenerMap.remove(downloadTask);
-        mDownloadDBHelper.delete(downloadTask);
+        mDownloadMap.remove(task.downloadUrl);
+        mDownloadListenerMap.remove(task.downloadUrl);
+        mDownloadDBHelper.delete(task.downloadUrl);
     }
 
     /*
@@ -203,18 +200,7 @@ public class DownloadManager {
     }
 
     /*
-     * 查询从数据库中下载的任务，根据网址。
-     *
-     * @param url 下载url
-     * @return DownloadTask
-    */
-    DownloadTask queryDownloadTask(String url) {
-        return mDownloadDBHelper.query(url);
-    }
-
-    /*
      * 查询下载任务已运行。
-     *
      * @param downloadTask
      * @return
     */
@@ -257,7 +243,7 @@ public class DownloadManager {
      * 从downloadtask移除侦听器，您不需要手动调用此方法。
      * @param downloadTask
     */
-    public void removeListener(DownloadTask downloadTask) {
+    public void removeDownloadListener(DownloadTask downloadTask) {
         mDownloadListenerMap.remove(downloadTask);
     }
 
@@ -280,16 +266,16 @@ public class DownloadManager {
      * @return
     */
     public boolean isUrlDownloaded(String url) {
-        boolean re = false;
+        boolean isExisted = false;
         DownloadTask task = mDownloadDBHelper.query(url);
         if (null != task) {
             if (task.downloadState == DownloadState.FINISHED) {
                 File file = new File(task.dirPath + "/" + task.fileName);
                 if (file.exists()) {
-                    re = true;
+                    isExisted = true;
                 }
             }
         }
-        return re;
+        return isExisted;
     }
 }
