@@ -20,6 +20,10 @@ proguard/
 proguard_logs/
 
 .idea/
+.idea/*.xml
+
 *.iml
+
+out/
 
 *.log
