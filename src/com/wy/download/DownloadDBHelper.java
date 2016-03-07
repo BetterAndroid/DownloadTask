@@ -238,7 +238,7 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
     private ContentValues task2ContentValues(DownloadTask downloadTask) {
         ContentValues values = new ContentValues();
         values.put(FIELD_URL, downloadTask.downloadUrl);
-        values.put(FIELD_DOWNLOAD_STATE, downloadTask.downloadState.toString());
+        values.put(FIELD_DOWNLOAD_STATE, downloadTask.downState.toString());
         values.put(FIELD_FILEPATH, downloadTask.dirPath);
         values.put(FIELD_FILENAME, downloadTask.fileName);
         values.put(FIELD_FINISHED_SIZE, downloadTask.finishSize);

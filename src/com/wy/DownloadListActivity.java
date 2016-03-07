@@ -19,7 +19,6 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 import com.wy.download.*;
-import com.zxt.download2.R;
 
 public class DownloadListActivity extends Activity  {
     public static final String DOWNLOADED = "isDownloaded";
@@ -146,7 +145,7 @@ public class DownloadListActivity extends Activity  {
                         break;
                     case DOWNLOADING:
                         Log.i(TAG, "DOWNLOADING pause " + mFileName);
-                        DownloadManager.getInstance(mContext).pauseDownload(task);
+                        DownloadManager.getInstance(mContext).pauseDownload(task.downloadUrl);
 
                         break;
                     case FINISHED:
@@ -232,7 +231,7 @@ public class DownloadListActivity extends Activity  {
         }
 
         @Override
-        public void onDownloadFinish(String filepath) {
+        public void onDownloadFinish(DownloadTask task) {
             Log.d(TAG, "onDownloadFinish");
             task.downloadState = DownloadState.FINISHED;
             /*task.finishedSize = task.finishedSize;
@@ -241,8 +240,8 @@ public class DownloadListActivity extends Activity  {
                 @Override
                 public void run() {
                     mDownloadingAdapter.notifyDataSetChanged();
-                    mDownloadedAdapter.add(task);
-                    mDownloadingAdapter.remove(task);
+//                    mDownloadedAdapter.add(task);
+//                    mDownloadingAdapter.remove(task);
                     // toggleView(true);
                 }
             });

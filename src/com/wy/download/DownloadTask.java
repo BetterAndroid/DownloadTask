@@ -41,9 +41,9 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     public File targetFile;
     public String cachSuffix = "cache";
     public String mimeType;
-    public int finishSize;
-    public int totalSize;
-    public String downState;
+    public long finishSize = 0;
+    public long totalSize;
+    public String downState = "downstate";
     /**
      * 下载的状态
      */
@@ -115,7 +115,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         long total = values[0];
         long finished = values[1];
         long speed = values[2];
-        Log.d("DownloadTask", "total="+total+"--finished"+finished+"---speed"+speed);
+//        Log.d("DownloadTask", "total="+total+"--finished"+finished+"---speed"+speed);
         onDownloadProgress(finished, total, speed);
     }
 
@@ -158,10 +158,10 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         //从数据库中获取
         finishSize = 0;
         HttpURLConnection connection = getConnection();
-        connection.connect();
         int totalSize = connection.getContentLength();
         this.totalSize = totalSize;
-        connection.setRequestProperty("Range","bytes=" + finishSize + "-" + totalSize);// 设置获取实体数据的范围
+//        connection.setRequestProperty("Range","bytes=" + finishSize + "-" + totalSize);// 设置获取实体数据的范围
+        connection.connect();
         mimeType = connection.getContentType();
         RandomAccessFile raf = new RandomAccessFile(targetFile, "rw");
         InputStream is = connection.getInputStream();
@@ -226,7 +226,6 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     public void onDownloadFinish(DownloadTask task) {
         targetFile.renameTo(saveFile);
         Toast.makeText(context, "onDownloadFinish", Toast.LENGTH_SHORT).show();
-
     }
 
     @Override
@@ -252,6 +251,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     @Override
     public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
 //        Toast.makeText(context, "onDownloadProgress", Toast.LENGTH_SHORT).show();
+        this.finishSize = finishedSize;
         DownloadManager.getInstance(context).updateDownloadTask(this);
     }
 }

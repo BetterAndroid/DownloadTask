@@ -17,7 +17,6 @@ import android.webkit.URLUtil;
 import android.widget.EditText;
 import android.widget.Toast;
 import com.wy.download.*;
-import com.zxt.download2.R;
 
 public class DownloadTestActivity extends Activity implements OnClickListener {
 
@@ -72,7 +71,7 @@ public class DownloadTestActivity extends Activity implements OnClickListener {
                     new DownloadListener() {
 
                         @Override
-                        public void onDownloadFinish(final String filepath) {
+                        public void onDownloadFinish(final DownloadTask task) {
                             // install apk
                         	DownloadTestActivity.this.runOnUiThread(new Runnable(){
 
@@ -81,7 +80,7 @@ public class DownloadTestActivity extends Activity implements OnClickListener {
 									Intent intent = new Intent();
 			                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			                        intent.setAction(android.content.Intent.ACTION_VIEW);
-			                        Uri uri = Uri.fromFile(new File(filepath));
+			                        Uri uri = Uri.fromFile(new File(task.dirPath));
 			                        intent.setDataAndType(uri, "application/vnd.android.package-archive");
 			                        startActivity(intent);									
 								}});

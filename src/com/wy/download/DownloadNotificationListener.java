@@ -74,7 +74,7 @@ public class DownloadNotificationListener implements DownloadListener {
     }
 
     @Override
-    public void onDownloadFinish(String filepath) {
+    public void onDownloadFinish(DownloadTask task) {
         mNotification.icon = android.R.drawable.stat_sys_download_done;
         mNotification.contentView.setTextViewText(Res.getInstance(mContext).getId("notify_state"),
                 mContext.getString(Res.getInstance(mContext).getString("download_finished")));
