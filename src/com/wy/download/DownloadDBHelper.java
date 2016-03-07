@@ -47,10 +47,6 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
     */
     private static final String FIELD_FILENAME = "filename";
 
-    private static final String FIELD_TITLE = "title";
-
-    private static final String FIELD_THUMBNAIL = "thumbnail";
-
     /*
      * 表中字段[已完成文件大小]
     */
@@ -94,10 +90,6 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
         buffer.append(" text, ");
         buffer.append(FIELD_FILENAME);
         buffer.append(" text, ");
-        buffer.append(FIELD_TITLE);
-        buffer.append(" text, ");
-        buffer.append(FIELD_THUMBNAIL);
-        buffer.append(" text, ");
         buffer.append(FIELD_FINISHED_SIZE);
         buffer.append(" integer, ");
         buffer.append(FIELD_TOTAL_SIZE);
@@ -115,8 +107,6 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
      * @see android.database.sqlite.SQLiteOpenHelper#onUpgrade(android.database.sqlite.SQLiteDatabase,
      *      int, int)
     */
-
-
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
@@ -124,12 +114,11 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
 
     /*
      * 存入一条下载任务（直接存入数据库）<BR>
-     * 
      * @param downloadTask DownloadTask
     */
-    void insert(DownloadTask downloadTask) {
+    public void insert(DownloadTask downloadTask) {
         SQLiteDatabase db = getWritableDatabase();
-        db.insert(TABLE_NAME, null, getContentValues(downloadTask));
+        db.insert(TABLE_NAME, null, task2ContentValues(downloadTask));
     }
 
     /*
@@ -137,24 +126,35 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
      * @param url
      * @return DownloadTask
     */
-    DownloadTask query(String url) {
+    public DownloadTask query(String url) {
         SQLiteDatabase db = getReadableDatabase();
-        DownloadTask task = null;
-        Cursor cursor = db.query(TABLE_NAME, new String[]{
-                FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_TITLE,
-                FIELD_THUMBNAIL, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE
-        }, FIELD_URL + "=?", new String[]{
-                url
-        }, null, null, null);
-        if (cursor != null) {
-            if (cursor.moveToNext()) {
-                task = new DownloadTask(mContext);
-                task.downloadUrl = cursor.getString(0);
-                task.dirPath = cursor.getString(3);
-                task.fileName = cursor.getString(4);
-            }
-            cursor.close();
+        Cursor cursor = db.query(TABLE_NAME,
+                new String[]{FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE },
+                FIELD_URL + "=?", new String[]{url}, null, null, null);
+        if(cursor == null) {
+            return null;
         }
+        DownloadTask task = null;
+        if (cursor.moveToNext()) {
+            task = cursor2Task(cursor);
+        }
+        cursor.close();
+        return task;
+    }
+
+    /**
+     * 查询到的数据构建成为task
+     * @param cursor
+     * @return
+     */
+    private DownloadTask cursor2Task(Cursor cursor) {
+        DownloadTask task = new DownloadTask(mContext);
+        task.downloadUrl = cursor.getString(cursor.getColumnIndex(FIELD_URL));
+        task.downState = cursor.getString(cursor.getColumnIndex(FIELD_DOWNLOAD_STATE));
+        task.dirPath = cursor.getString(cursor.getColumnIndex(FIELD_FILEPATH));
+        task.fileName = cursor.getString(cursor.getColumnIndex(FIELD_FILENAME));
+        task.finishSize = cursor.getInt(cursor.getColumnIndex(FIELD_FINISHED_SIZE));
+        task.totalSize = cursor.getInt(cursor.getColumnIndex(FIELD_TOTAL_SIZE));
         return task;
     }
 
@@ -162,20 +162,15 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
      * 查询数据库中所有下载任务集合<BR>
      * @return 下载任务List
     */
-    List<DownloadTask> queryAll() {
+    public List<DownloadTask> queryAll() {
         List<DownloadTask> tasks = new ArrayList<DownloadTask>();
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_NAME, new String[]{
-                FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_TITLE,
-                FIELD_THUMBNAIL, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE
+                FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE
         }, null, null, null, null, null);
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                DownloadTask task = new DownloadTask(mContext);
-                task.downloadUrl = cursor.getString(0);
-                task.dirPath = cursor.getString(3);
-                task.fileName = cursor.getString(4);
-
+                DownloadTask task = cursor2Task(cursor);
                 tasks.add(task);
             }
             cursor.close();
@@ -183,20 +178,15 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
         return tasks;
     }
 
-    List<DownloadTask> queryDownloaded() {
+    public List<DownloadTask> queryDownloaded() {
         List<DownloadTask> tasks = new ArrayList<DownloadTask>();
-
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_NAME, new String[]{
-                FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_TITLE,
-                FIELD_THUMBNAIL, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE
+                FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE
         }, FIELD_DOWNLOAD_STATE + "='FINISHED'", null, null, null, "_id desc");
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                DownloadTask task = new DownloadTask(mContext);
-                task.downloadUrl = cursor.getString(0);
-                task.dirPath = cursor.getString(3);
-                task.fileName = cursor.getString(4);
+                DownloadTask task = cursor2Task(cursor);
                 tasks.add(task);
             }
             cursor.close();
@@ -205,21 +195,15 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
         return tasks;
     }
 
-    List<DownloadTask> queryUnDownloaded() {
+    public List<DownloadTask> queryUnDownloaded() {
         List<DownloadTask> tasks = new ArrayList<DownloadTask>();
-
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_NAME, new String[]{
-                FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_TITLE,
-                FIELD_THUMBNAIL, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE
+                FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE
         }, FIELD_DOWNLOAD_STATE + "<> 'FINISHED'", null, null, null, "_id desc");
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                DownloadTask task = new DownloadTask(mContext);
-                task.downloadUrl = cursor.getString(0);
-                task.dirPath = cursor.getString(3);
-                task.fileName = cursor.getString(4);
-
+                DownloadTask task = cursor2Task(cursor);
                 tasks.add(task);
             }
             cursor.close();
@@ -232,23 +216,18 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
      * 更新下载任务<BR>
      * @param downloadTask DownloadTask
     */
-    void update(DownloadTask downloadTask) {
+    public void update(DownloadTask downloadTask) {
         SQLiteDatabase db = getWritableDatabase();
-
-        db.update(TABLE_NAME, getContentValues(downloadTask), FIELD_URL + "=?", new String[]{
-                downloadTask.downloadUrl
-        });
+        db.update(TABLE_NAME, task2ContentValues(downloadTask), FIELD_URL + "=?", new String[]{downloadTask.downloadUrl });
     }
 
     /*
      * 从数据库中删除一条下载任务<BR>
      * @param downloadTask DownloadTask
     */
-    void delete(DownloadTask downloadTask) {
+    public void delete(DownloadTask downloadTask) {
         SQLiteDatabase db = getWritableDatabase();
-        db.delete(TABLE_NAME, FIELD_URL + "=?", new String[]{
-                downloadTask.downloadUrl
-        });
+        db.delete(TABLE_NAME, FIELD_URL + "=?", new String[]{downloadTask.downloadUrl });
     }
 
     /*
@@ -256,16 +235,14 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
      * @param downloadTask DownloadTask
      * @return ContentValues
      */
-    private ContentValues getContentValues(DownloadTask downloadTask) {
+    private ContentValues task2ContentValues(DownloadTask downloadTask) {
         ContentValues values = new ContentValues();
         values.put(FIELD_URL, downloadTask.downloadUrl);
         values.put(FIELD_DOWNLOAD_STATE, downloadTask.downloadState.toString());
         values.put(FIELD_FILEPATH, downloadTask.dirPath);
         values.put(FIELD_FILENAME, downloadTask.fileName);
-//        values.put(FIELD_TITLE, downloadTask.title);
-//        values.put(FIELD_THUMBNAIL, downloadTask.thumbnail);
-//        values.put(FIELD_FINISHED_SIZE, downloadTask.finishedSize);
-//        values.put(FIELD_TOTAL_SIZE, downloadTask.totalSize);
+        values.put(FIELD_FINISHED_SIZE, downloadTask.finishSize);
+        values.put(FIELD_TOTAL_SIZE, downloadTask.totalSize);
         return values;
     }
 }

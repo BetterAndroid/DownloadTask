@@ -41,7 +41,9 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     public File targetFile;
     public String cachSuffix = "cache";
     public String mimeType;
-
+    public int finishSize;
+    public int totalSize;
+    public String downState;
     /**
      * 下载的状态
      */
@@ -152,9 +154,13 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     private volatile boolean mStop = false;
 
     private void doDownload() throws IOException {
+        //从数据库中获取
+        finishSize = 0;
         HttpURLConnection connection = getConnection();
         connection.connect();
         int totalSize = connection.getContentLength();
+        this.totalSize = totalSize;
+        connection.setRequestProperty("Range","bytes=" + finishSize + "-" + totalSize);// 设置获取实体数据的范围
         mimeType = connection.getContentType();
         RandomAccessFile raf = new RandomAccessFile(targetFile, "rw");
         InputStream is = connection.getInputStream();
