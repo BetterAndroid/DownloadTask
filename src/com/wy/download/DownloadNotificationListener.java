@@ -39,7 +39,7 @@ public class DownloadNotificationListener implements DownloadListener {
     }
 
     @Override
-    public void onDownloadStop() {
+    public void onDownloadStop(DownloadTask task) {
         mNotification.contentView.setTextViewText(Res.getInstance(mContext).getId("notify_state"),
                 mContext.getString(Res.getInstance(mContext).getString("download_stopped")));
 
@@ -48,7 +48,7 @@ public class DownloadNotificationListener implements DownloadListener {
     }
 
     @Override
-    public void onDownloadStart() {
+    public void onDownloadStart(DownloadTask task) {
         mNotificationManager.notify(mId, mNotification);
     }
 
@@ -66,7 +66,7 @@ public class DownloadNotificationListener implements DownloadListener {
     }
 
     @Override
-    public void onDownloadPause() {
+    public void onDownloadPause(DownloadTask task) {
         mNotification.contentView.setTextViewText(Res.getInstance(mContext).getId("notify_state"),
                 mContext.getString(Res.getInstance(mContext).getString("download_paused")));
         mNotification.contentView.setProgressBar(Res.getInstance(mContext).getId("notify_processbar"), 100, 0, true);
@@ -95,7 +95,7 @@ public class DownloadNotificationListener implements DownloadListener {
     }
 
     @Override
-    public void onDownloadFail() {
+    public void onDownloadFail(DownloadTask task) {
         mNotification.contentView.setTextViewText(Res.getInstance(mContext).getId("notify_state"),
                 mContext.getString(Res.getInstance(mContext).getString("download_failed")));
         mNotification.contentView.setProgressBar(Res.getInstance(mContext).getId("notify_processbar"), 100, 0, true);

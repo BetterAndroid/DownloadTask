@@ -20,7 +20,7 @@ import android.webkit.URLUtil;
 /*
  * 单例的下载管理器，用于管理所有的下载任务
 */
-public class DownloadManager {
+public class DownloadManager implements DownloadListener{
     private static final String TAG = DownloadManager.class.getSimpleName();
     private Context mContext;
 
@@ -159,7 +159,7 @@ public class DownloadManager {
                                 if(listener == null) {
                                     iterator.remove();
                                 } else {
-                                    listener.onDownloadStop();
+                                    listener.onDownloadStop(task);
                                 }
                             }
                             cs.clear();
@@ -168,6 +168,7 @@ public class DownloadManager {
                     }
                     mDownloadMap.remove(task.downloadUrl);
                     mDownloadListenerMap.remove(task.downloadUrl);
+                    deleteFile(task.dirPath + "/" + task.fileName + "." + DownloadTask.cachSuffix);
                     break;
                 case UI_UPDATE:
                     task = (DownloadTask) msg.obj;
@@ -181,7 +182,6 @@ public class DownloadManager {
                             listener.onDownloadProgress(task.finishSize, task.totalSize, 0);
                         }
                     }
-                    deleteFile(task.dirPath + "/" + task.fileName + "." + DownloadTask.cachSuffix);
                     break;
                 case UI_QUERY_ONE:
                     // 保存到数据库，如果下载任务是有效的，并开始下载。
@@ -465,6 +465,36 @@ public class DownloadManager {
         if (cb != null && mDownloadCallback != null) {
             mDownloadCallback.remove(cb);
         }
+    }
+
+    @Override
+    public void onDownloadFinish(DownloadTask task) {
+
+    }
+
+    @Override
+    public void onDownloadStart(DownloadTask task) {
+
+    }
+
+    @Override
+    public void onDownloadPause(DownloadTask task) {
+
+    }
+
+    @Override
+    public void onDownloadStop(DownloadTask task) {
+
+    }
+
+    @Override
+    public void onDownloadFail(DownloadTask task) {
+
+    }
+
+    @Override
+    public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
+
     }
 
     public static class DownloadCallback {

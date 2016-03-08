@@ -66,22 +66,22 @@ public class MainActivity extends Activity implements View.OnClickListener, Down
     }
 
     @Override
-    public void onDownloadStart() {
+    public void onDownloadStart(DownloadTask task) {
         Toast.makeText(getApplicationContext(), "onDownloadStart", Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    public void onDownloadPause() {
+    public void onDownloadPause(DownloadTask task) {
         Toast.makeText(getApplicationContext(), "onDownloadPause", Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    public void onDownloadStop() {
+    public void onDownloadStop(DownloadTask task) {
         Toast.makeText(getApplicationContext(), "onDownloadStop", Toast.LENGTH_SHORT).show();
     }
 
     @Override
-    public void onDownloadFail() {
+    public void onDownloadFail(DownloadTask task) {
         Toast.makeText(getApplicationContext(), "onDownloadFail", Toast.LENGTH_SHORT).show();
     }
 

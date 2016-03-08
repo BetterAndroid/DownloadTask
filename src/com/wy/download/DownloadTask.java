@@ -120,7 +120,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     protected void onPreExecute() {
         super.onPreExecute();
         downloadState = INITIALIZE;
-        onDownloadStart();
+        onDownloadStart(this);
     }
 
     @Override
@@ -152,11 +152,11 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
 //            onDownloadFinish(dirPath+File.separator+fileName);
             onDownloadFinish(this);
         } else if(downloadState == FAILED) {
-            onDownloadFail();
+            onDownloadFail(this);
         } else if(downloadState == PAUSE) {
-            onDownloadPause();
+            onDownloadPause(this);
         } else if(downloadState == STOP) {
-            onDownloadStop();
+            onDownloadStop(this);
         }
     }
 
@@ -254,28 +254,32 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     @Override
     public void onDownloadFinish(DownloadTask task) {
         targetFile.renameTo(saveFile);
+        DownloadManager.getInstance(context).onDownloadFinish(task);
     }
 
     @Override
-    public void onDownloadStart() {
+    public void onDownloadStart(DownloadTask task) {
+        DownloadManager.getInstance(context).onDownloadStart(task);
     }
 
     @Override
-    public void onDownloadPause() {
+    public void onDownloadPause(DownloadTask task) {
+        DownloadManager.getInstance(context).onDownloadPause(task);
     }
 
     @Override
-    public void onDownloadStop() {
+    public void onDownloadStop(DownloadTask task) {
+        DownloadManager.getInstance(context).onDownloadStop(task);
     }
 
     @Override
-    public void onDownloadFail() {
+    public void onDownloadFail(DownloadTask task) {
+        DownloadManager.getInstance(context).onDownloadFail(task);
     }
 
     @Override
     public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
 //        Toast.makeText(context, "onDownloadProgress", Toast.LENGTH_SHORT).show();
-        this.finishSize = finishedSize;
         DownloadManager.getInstance(context).updateDownloadTask(this);
     }
 }

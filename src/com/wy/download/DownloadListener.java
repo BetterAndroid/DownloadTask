@@ -16,22 +16,22 @@ public interface DownloadListener {
     /**
      * 开始下载
      */
-    void onDownloadStart();
+    void onDownloadStart(DownloadTask task);
 
     /**
      * 暂停下载
      */
-    void onDownloadPause();
+    void onDownloadPause(DownloadTask task);
 
     /**
      * 停止下载
      */
-    void onDownloadStop();
+    void onDownloadStop(DownloadTask task);
 
     /**
      * 下载失败
      */
-    void onDownloadFail();
+    void onDownloadFail(DownloadTask task);
 
     /**
      * 下载进度
