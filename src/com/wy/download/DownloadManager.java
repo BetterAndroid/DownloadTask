@@ -73,6 +73,9 @@ public class DownloadManager {
         if(task == null) {
             task = DownloadTask.buildTask(mContext, downloadUrl);
             mDownloadDBHelper.insert(task);
+        } else {
+            task.targetFile = DownloadTask.setTargetFile(task.dirPath, task.fileName);
+            task.saveFile = DownloadTask.setSaveFile(task.dirPath,task.fileName,downloadUrl);
         }
         mDownloadMap.put(downloadUrl, task);
         task.startDownload();

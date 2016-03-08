@@ -73,7 +73,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         return downloadUrl.substring(downloadUrl.lastIndexOf("/"), downloadUrl.lastIndexOf("."));
     }
 
-    private static File setTargetFile(String dirPath, String fileName) {
+    public static File setTargetFile(String dirPath, String fileName) {
         File dir = new File(dirPath);
         if(!dir.exists()) {
             dir.mkdirs();
@@ -81,7 +81,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         return new File(dirPath, fileName + ".cache");
     }
 
-    private static File setSaveFile(String dirPath, String fileName, String downloadUrl) {
+    public static File setSaveFile(String dirPath, String fileName, String downloadUrl) {
         File dir = new File(dirPath);
         if(!dir.exists()) {
             dir.mkdirs();
@@ -156,20 +156,24 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
 
     private void doDownload() throws IOException {
         //从数据库中获取
-        finishSize = 0;
         HttpURLConnection connection = getConnection();
-        int totalSize = connection.getContentLength();
-        this.totalSize = totalSize;
-//        connection.setRequestProperty("Range","bytes=" + finishSize + "-" + totalSize);// 设置获取实体数据的范围
+        connection.setRequestMethod("GET");
+        if(totalSize != 0) {
+            connection.setRequestProperty("Range","bytes=" + finishSize + "-" + totalSize);// 设置获取实体数据的范围
+        } else {
+            int totalSize = connection.getContentLength();
+            this.totalSize = totalSize;
+        }
         connection.connect();
         mimeType = connection.getContentType();
-        RandomAccessFile raf = new RandomAccessFile(targetFile, "rw");
+        RandomAccessFile raf = new RandomAccessFile(targetFile, "rwd");
+        raf.seek(finishSize);
         InputStream is = connection.getInputStream();
         byte[] buffer = new byte[BUFFER_SIZE];
 
         long speed = 0;
         int count = 0;
-        long downloadSize = 0;
+        long downloadSize = finishSize;
         long prevTime = System.currentTimeMillis();
         long achieveSize = downloadSize;
         while ((count = is.read(buffer)) != -1) {
