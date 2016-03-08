@@ -1,8 +1,4 @@
-
 package com.wy.download;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -11,11 +7,18 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-public class DownloadDBHelper extends SQLiteOpenHelper {
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Created by 51talk on 2016/3/8.
+ */
+public class MyDBManager extends SQLiteOpenHelper {
+
     /*
-     * debug tag.
-    */
-    private static final String TAG = "DownloadDBHelper";
+    * debug tag.
+   */
+    private static final String TAG = MyDBManager.class.getSimpleName();
 
     /*
      * 表名:download
@@ -57,14 +60,33 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
     */
     private static final String FIELD_TOTAL_SIZE = "totalSize";
 
-    /*
-     * Constructor
-     * @param context Context
-     * @param name 数据库文件名（.db）由调用者提供
-    */
+
+
     private Context mContext;
-    public DownloadDBHelper(Context context, String name) {
-        super(context, name, null, 1);
+    /**
+     * 下载的数据库管理器
+     */
+    private static final String DOWNLOADDB = "download.db";
+    private static MyDBManager instance ;
+    /* *
+    * 获得一个单例的下载管理器
+    * @param context Context
+    * @return DownloadManager instance
+   */
+    public static MyDBManager getInstance(Context context) {
+        if (instance == null) {
+            synchronized (DownloadManager.class) {
+                if (instance == null) {
+                    instance = new MyDBManager(context);
+                }
+            }
+        }
+        return instance;
+    }
+
+    private MyDBManager(Context context) {
+        // 数据库操作对象实例化
+        super(context, DOWNLOADDB, null, 1);
         mContext = context;
     }
 
@@ -113,12 +135,30 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
     }
 
     /*
-     * 存入一条下载任务（直接存入数据库）<BR>
-     * @param downloadTask DownloadTask
-    */
+ * 存入一条下载任务（直接存入数据库）<BR>
+ * @param downloadTask DownloadTask
+*/
     public void insert(DownloadTask downloadTask) {
         SQLiteDatabase db = getWritableDatabase();
         db.insert(TABLE_NAME, null, task2ContentValues(downloadTask));
+    }
+
+    /*
+     * 更新下载任务<BR>
+     * @param downloadTask DownloadTask
+    */
+    public void update(DownloadTask task) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.update(TABLE_NAME, task2ContentValues(task), FIELD_URL + "=?", new String[]{task.downloadUrl });
+    }
+
+    /*
+     * 从数据库中删除一条下载任务<BR>
+     * @param downloadTask DownloadTask
+    */
+    public void delete(String downloadUrl) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.delete(TABLE_NAME, FIELD_URL + "=?", new String[]{downloadUrl });
     }
 
     /*
@@ -126,11 +166,11 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
      * @param url
      * @return DownloadTask
     */
-    public DownloadTask query(String url) {
+    public DownloadTask query(String downloadUrl) {
         SQLiteDatabase db = getReadableDatabase();
         Cursor cursor = db.query(TABLE_NAME,
                 new String[]{FIELD_URL, FIELD_DOWNLOAD_STATE, FIELD_FILEPATH, FIELD_FILENAME, FIELD_FINISHED_SIZE, FIELD_TOTAL_SIZE },
-                FIELD_URL + "=?", new String[]{url}, null, null, null);
+                FIELD_URL + "=?", new String[]{downloadUrl}, null, null, null);
         if(cursor == null) {
             return null;
         }
@@ -139,22 +179,6 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
             task = cursor2Task(cursor);
         }
         cursor.close();
-        return task;
-    }
-
-    /**
-     * 查询到的数据构建成为task
-     * @param cursor
-     * @return
-     */
-    private DownloadTask cursor2Task(Cursor cursor) {
-        DownloadTask task = new DownloadTask(mContext);
-        task.downloadUrl = cursor.getString(cursor.getColumnIndex(FIELD_URL));
-        task.downloadState = cursor.getInt(cursor.getColumnIndex(FIELD_DOWNLOAD_STATE));
-        task.dirPath = cursor.getString(cursor.getColumnIndex(FIELD_FILEPATH));
-        task.fileName = cursor.getString(cursor.getColumnIndex(FIELD_FILENAME));
-        task.finishSize = cursor.getInt(cursor.getColumnIndex(FIELD_FINISHED_SIZE));
-        task.totalSize = cursor.getInt(cursor.getColumnIndex(FIELD_TOTAL_SIZE));
         return task;
     }
 
@@ -213,24 +237,6 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
     }
 
     /*
-     * 更新下载任务<BR>
-     * @param downloadTask DownloadTask
-    */
-    public void update(DownloadTask downloadTask) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.update(TABLE_NAME, task2ContentValues(downloadTask), FIELD_URL + "=?", new String[]{downloadTask.downloadUrl });
-    }
-
-    /*
-     * 从数据库中删除一条下载任务<BR>
-     * @param downloadTask DownloadTask
-    */
-    public void delete(String downloadUrl) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.delete(TABLE_NAME, FIELD_URL + "=?", new String[]{downloadUrl });
-    }
-
-    /*
      * 将DownloadTask转化成ContentValues<BR>
      * @param downloadTask DownloadTask
      * @return ContentValues
@@ -244,5 +250,21 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
         values.put(FIELD_FINISHED_SIZE, downloadTask.finishSize);
         values.put(FIELD_TOTAL_SIZE, downloadTask.totalSize);
         return values;
+    }
+
+    /**
+     * 查询到的数据构建成为task
+     * @param cursor
+     * @return
+     */
+    private DownloadTask cursor2Task(Cursor cursor) {
+        DownloadTask task = new DownloadTask(mContext);
+        task.downloadUrl = cursor.getString(cursor.getColumnIndex(FIELD_URL));
+        task.downloadState = cursor.getInt(cursor.getColumnIndex(FIELD_DOWNLOAD_STATE));
+        task.dirPath = cursor.getString(cursor.getColumnIndex(FIELD_FILEPATH));
+        task.fileName = cursor.getString(cursor.getColumnIndex(FIELD_FILENAME));
+        task.finishSize = cursor.getInt(cursor.getColumnIndex(FIELD_FINISHED_SIZE));
+        task.totalSize = cursor.getInt(cursor.getColumnIndex(FIELD_TOTAL_SIZE));
+        return task;
     }
 }

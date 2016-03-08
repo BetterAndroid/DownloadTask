@@ -25,12 +25,12 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     /**
      * init
      */
-    private static final int INITIALIZE = 0;
+    public static final int INITIALIZE = 0;
 
     /**
      * downloading
      */
-    private static final int DOWNLOADING = 1;
+    public static final int DOWNLOADING = 1;
     /**
      * download failed, the reason may be network error, file io error etc.
      */
@@ -38,17 +38,17 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     /**
      * download finished
      */
-    private static final int FINISHED = 3;
+    public static final int FINISHED = 3;
 
     /**
      * download paused
      */
-    private static final int PAUSE = 4;
+    public static final int PAUSE = 4;
 
     /**
      * download stoped
      */
-    private static final int STOP = 5;
+    public static final int STOP = 5;
 
 
     private Context context;
@@ -69,7 +69,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
 
     public File saveFile;
     public File targetFile;
-    public String cachSuffix = "cache";
+    public static final String cachSuffix = "cache";
     public String mimeType;
     public long finishSize = 0;
     public long totalSize;
@@ -104,7 +104,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         if(!dir.exists()) {
             dir.mkdirs();
         }
-        return new File(dirPath, fileName + ".cache");
+        return new File(dirPath, fileName + "." + cachSuffix);
     }
 
     public static File setSaveFile(String dirPath, String fileName, String downloadUrl) {
@@ -184,11 +184,10 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         //从数据库中获取
         HttpURLConnection connection = getConnection();
         connection.setRequestMethod("GET");
-        if(totalSize != 0) {
+        if(this.totalSize != 0) {
             connection.setRequestProperty("Range","bytes=" + finishSize + "-" + totalSize);// 设置获取实体数据的范围
         } else {
-            int totalSize = connection.getContentLength();
-            this.totalSize = totalSize;
+            this.totalSize = connection.getContentLength();
         }
         connection.connect();
         mimeType = connection.getContentType();
@@ -237,8 +236,8 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         }
         mPause = false;
         mStop = false;
-//        this.execute();
-        this.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        this.execute();
+//        this.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 //        this.execute(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
@@ -255,27 +254,22 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     @Override
     public void onDownloadFinish(DownloadTask task) {
         targetFile.renameTo(saveFile);
-        Toast.makeText(context, "onDownloadFinish", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onDownloadStart() {
-        Toast.makeText(context, "onDownloadStart", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onDownloadPause() {
-        Toast.makeText(context, "onDownloadPause", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onDownloadStop() {
-        Toast.makeText(context, "onDownloadStop", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onDownloadFail() {
-        Toast.makeText(context, "onDownloadFail", Toast.LENGTH_SHORT).show();
     }
 
     @Override
