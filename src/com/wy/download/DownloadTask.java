@@ -21,6 +21,36 @@ import java.util.concurrent.Executor;
  */
 public class DownloadTask extends AsyncTask<Executor, Long, Void> implements DownloadListener {
     private static final String TAG = DownloadTask.class.getSimpleName();
+
+    /**
+     * init
+     */
+    private static final int INITIALIZE = 0;
+
+    /**
+     * downloading
+     */
+    private static final int DOWNLOADING = 1;
+    /**
+     * download failed, the reason may be network error, file io error etc.
+     */
+    private static final int FAILED = 2;
+    /**
+     * download finished
+     */
+    private static final int FINISHED = 3;
+
+    /**
+     * download paused
+     */
+    private static final int PAUSE = 4;
+
+    /**
+     * download stoped
+     */
+    private static final int STOP = 5;
+
+
     private Context context;
     /**
      * 下载的地址
@@ -43,11 +73,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     public String mimeType;
     public long finishSize = 0;
     public long totalSize;
-    public String downState = "downstate";
-    /**
-     * 下载的状态
-     */
-    public volatile DownloadState downloadState;
+    public int downloadState = INITIALIZE;//下载的状态
 
     public DownloadTask(Context context) {
         this.context = context;
@@ -93,18 +119,18 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
-        downloadState = DownloadState.INITIALIZE;
+        downloadState = INITIALIZE;
         onDownloadStart();
     }
 
     @Override
     protected Void doInBackground(Executor... params) {
         try {
-            downloadState = DownloadState.DOWNLOADING;
+            downloadState = DOWNLOADING;
             doDownload();
         } catch (IOException e) {
             e.printStackTrace();
-            downloadState = DownloadState.FAILED;
+            downloadState = FAILED;
         }
         return null;
     }
@@ -122,14 +148,14 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     @Override
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
-        if(downloadState == DownloadState.FINISHED) {
+        if(downloadState == FINISHED) {
 //            onDownloadFinish(dirPath+File.separator+fileName);
             onDownloadFinish(this);
-        } else if(downloadState == DownloadState.FAILED) {
+        } else if(downloadState == FAILED) {
             onDownloadFail();
-        } else if(downloadState == DownloadState.PAUSE) {
+        } else if(downloadState == PAUSE) {
             onDownloadPause();
-        } else if(downloadState == DownloadState.STOP) {
+        } else if(downloadState == STOP) {
             onDownloadStop();
         }
     }
@@ -178,12 +204,12 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         long achieveSize = downloadSize;
         while ((count = is.read(buffer)) != -1) {
             if(mPause) {
-                downloadState = DownloadState.PAUSE;
+                downloadState = PAUSE;
                 //更新数据库
                 break;
             }
             if(mStop) {
-                downloadState = DownloadState.STOP;
+                downloadState = STOP;
                 //删除数据库
                 break;
             }
@@ -200,7 +226,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
             }
         }
         if(!mPause && ! mStop) {
-            downloadState = DownloadState.FINISHED;
+            downloadState = FINISHED;
         }
     }
 

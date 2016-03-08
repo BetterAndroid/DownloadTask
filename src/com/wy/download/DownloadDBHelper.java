@@ -150,7 +150,7 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
     private DownloadTask cursor2Task(Cursor cursor) {
         DownloadTask task = new DownloadTask(mContext);
         task.downloadUrl = cursor.getString(cursor.getColumnIndex(FIELD_URL));
-        task.downState = cursor.getString(cursor.getColumnIndex(FIELD_DOWNLOAD_STATE));
+        task.downloadState = cursor.getInt(cursor.getColumnIndex(FIELD_DOWNLOAD_STATE));
         task.dirPath = cursor.getString(cursor.getColumnIndex(FIELD_FILEPATH));
         task.fileName = cursor.getString(cursor.getColumnIndex(FIELD_FILENAME));
         task.finishSize = cursor.getInt(cursor.getColumnIndex(FIELD_FINISHED_SIZE));
@@ -238,7 +238,7 @@ public class DownloadDBHelper extends SQLiteOpenHelper {
     private ContentValues task2ContentValues(DownloadTask downloadTask) {
         ContentValues values = new ContentValues();
         values.put(FIELD_URL, downloadTask.downloadUrl);
-        values.put(FIELD_DOWNLOAD_STATE, downloadTask.downState.toString());
+        values.put(FIELD_DOWNLOAD_STATE, downloadTask.downloadState);
         values.put(FIELD_FILEPATH, downloadTask.dirPath);
         values.put(FIELD_FILENAME, downloadTask.fileName);
         values.put(FIELD_FINISHED_SIZE, downloadTask.finishSize);
