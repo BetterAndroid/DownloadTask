@@ -61,7 +61,6 @@ public class MainActivity extends Activity implements View.OnClickListener, Down
 
     @Override
     public void onDownloadFinish(DownloadTask task) {
-        task.targetFile.renameTo(task.saveFile);
         Toast.makeText(getApplicationContext(), "onDownloadFinish", Toast.LENGTH_SHORT).show();
     }
 

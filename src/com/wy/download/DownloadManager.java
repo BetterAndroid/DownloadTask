@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -29,8 +30,7 @@ public class DownloadManager implements DownloadListener{
      */
     private MyDBManager myDb;
     private HashMap<String, DownloadTask> mDownloadMap = new HashMap<String, DownloadTask>();
-    private HashMap<String, CopyOnWriteArraySet<DownloadListener>> mDownloadListenerMap = new HashMap<String, CopyOnWriteArraySet<DownloadListener>>();
-    ;
+    private HashMap<String, DownloadListener> mDownloadListenerMap = new HashMap<String, DownloadListener>();
 
     private static DownloadManager instance;
 
@@ -99,7 +99,7 @@ public class DownloadManager implements DownloadListener{
                         task = (DownloadTask) msg.obj;
                         myDb.update(task);
                         uiMsg = Message.obtain();
-                        uiMsg.what = UI_DELETE;
+                        uiMsg.what = UI_UPDATE;
                         uiMsg.obj = task;
                         mUiHandler.sendMessage(uiMsg);
                         break;
@@ -109,6 +109,9 @@ public class DownloadManager implements DownloadListener{
                         uiMsg = Message.obtain();
                         uiMsg.what = UI_QUERY_ONE;
                         uiMsg.obj = task;
+                        Bundle data = new Bundle();
+                        data.putString("downloadUrl", downloadUrl);
+                        uiMsg.setData(data);
                         mUiHandler.sendMessage(uiMsg);
                         break;
                     case DB_QUERY_ALL:
@@ -151,20 +154,10 @@ public class DownloadManager implements DownloadListener{
                     downloadUrl = msg.obj.toString();
                     task = mDownloadMap.get(downloadUrl);
                     if (task.downloadState != DownloadTask.FINISHED) {
-                        CopyOnWriteArraySet<DownloadListener> cs = mDownloadListenerMap.get(downloadUrl);
+                        DownloadListener cs = mDownloadListenerMap.get(downloadUrl);
                         if(cs != null) {
-                            Iterator<DownloadListener> iterator = mDownloadListenerMap.get(downloadUrl).iterator();
-                            while (iterator.hasNext()) {
-                                DownloadListener listener = iterator.next();
-                                if(listener == null) {
-                                    iterator.remove();
-                                } else {
-                                    listener.onDownloadStop(task);
-                                }
-                            }
-                            cs.clear();
+                            cs.onDownloadStop(task);
                         }
-
                     }
                     mDownloadMap.remove(task.downloadUrl);
                     mDownloadListenerMap.remove(task.downloadUrl);
@@ -172,25 +165,22 @@ public class DownloadManager implements DownloadListener{
                     break;
                 case UI_UPDATE:
                     task = (DownloadTask) msg.obj;
-                    CopyOnWriteArraySet<DownloadListener> ds = mDownloadListenerMap.get(task.downloadUrl);
-                    Iterator<DownloadListener> iterator = ds.iterator();
-                    while (iterator.hasNext()) {
-                        DownloadListener listener = iterator.next();
-                        if (listener == null) {
-                            iterator.remove();
-                        } else {
-                            listener.onDownloadProgress(task.finishSize, task.totalSize, 0);
-                        }
+                    DownloadListener listener = mDownloadListenerMap.get(task.downloadUrl);
+                    if (listener != null) {
+                        listener.onDownloadProgress(task.finishSize, task.totalSize, 0);
                     }
                     break;
                 case UI_QUERY_ONE:
                     // 保存到数据库，如果下载任务是有效的，并开始下载。
                     task = (DownloadTask) msg.obj;
-                    downloadUrl = task.downloadUrl;
+                    downloadUrl = msg.getData().getString("downloadUrl");
                     if (task == null) {
                         task = DownloadTask.buildTask(mContext, downloadUrl);
                         saveDownloadTask(task);
                     } else {
+                        if(task.downloadState == (DownloadTask.DOWNLOADING | DownloadTask.FINISHED)) {
+                            return;
+                        }
                         task.targetFile = DownloadTask.setTargetFile(task.dirPath, task.fileName);
                         task.saveFile = DownloadTask.setSaveFile(task.dirPath, task.fileName, downloadUrl);
                         mDownloadMap.put(downloadUrl, task);
@@ -276,24 +266,8 @@ public class DownloadManager implements DownloadListener{
      * @param listener
     */
     private void addDownloadListener(String downloadUrl, DownloadListener listener) {
-        CopyOnWriteArraySet<DownloadListener> cs = mDownloadListenerMap.get(downloadUrl);
-        if (cs == null) {
-            cs = new CopyOnWriteArraySet<DownloadListener>();
-            mDownloadListenerMap.put(downloadUrl, cs);
-        }
-        cs.add(listener);
-    }
-
-    private void removeDownloadListener(String downloadUrl, DownloadListener listener) {
-        CopyOnWriteArraySet<DownloadListener> cs = mDownloadListenerMap.get(downloadUrl);
-        if (cs == null) {
-            return;
-        } else {
-            if (cs.size() > 1) {
-                cs.remove(listener);
-            } else {
-                mDownloadListenerMap.remove(downloadUrl);
-            }
+        if (listener != null) {
+            mDownloadListenerMap.put(downloadUrl, listener);
         }
     }
 
@@ -321,6 +295,7 @@ public class DownloadManager implements DownloadListener{
      * @param downloadTask
     */
     public void updateDownloadTask(DownloadTask task) {
+        Log.d(TAG, "");
         Message msg = Message.obtain();
         msg.what = DB_UPDATE;
         msg.obj = task;
@@ -469,32 +444,34 @@ public class DownloadManager implements DownloadListener{
 
     @Override
     public void onDownloadFinish(DownloadTask task) {
-
+        mDownloadListenerMap.get(task.downloadUrl).onDownloadFinish(task);
+        removeDownloadListener(task.downloadUrl);
     }
 
     @Override
     public void onDownloadStart(DownloadTask task) {
-
+        mDownloadListenerMap.get(task.downloadUrl).onDownloadStart(task);
     }
 
     @Override
     public void onDownloadPause(DownloadTask task) {
-
+        mDownloadListenerMap.get(task.downloadUrl).onDownloadPause(task);
+        removeDownloadListener(task.downloadUrl);
     }
 
     @Override
     public void onDownloadStop(DownloadTask task) {
-
+        mDownloadListenerMap.get(task.downloadUrl).onDownloadStop(task);
+        removeDownloadListener(task.downloadUrl);
     }
 
     @Override
     public void onDownloadFail(DownloadTask task) {
-
+        mDownloadListenerMap.get(task.downloadUrl).onDownloadFail(task);
     }
 
     @Override
     public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
-
     }
 
     public static class DownloadCallback {

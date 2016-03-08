@@ -28,17 +28,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.wy.DownloadListActivity"
-            android:configChanges="orientation|keyboardHidden|locale"
-            android:label="@string/download_manager"
-            android:launchMode="singleTop" >
-            <intent-filter>
-                <action android:name="@string/download_list_action"/>
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
         <meta-data
             android:name="DOWNLOAD_KEY"
             android:value="d5d21b158b9925bcc51c6c7b1e6d4459" >
