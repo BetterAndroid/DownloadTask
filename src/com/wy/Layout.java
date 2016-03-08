@@ -1,4 +1,3 @@
-/*
 
 package com.wy;
 
@@ -18,4 +17,3 @@ public class Layout {
         return Res.getInstance(context).getLayout("download_notify");
     }
 }
-*/
