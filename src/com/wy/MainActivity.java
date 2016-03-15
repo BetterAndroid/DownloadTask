@@ -19,6 +19,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Down
 
     private Button mBtnDownload;
     private Button mBtnStopDownload;
+    private Button mBtnDownload1;
+    private Button mBtnStopDownload1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +30,10 @@ public class MainActivity extends Activity implements View.OnClickListener, Down
         mBtnDownload.setOnClickListener(this);
         mBtnStopDownload = (Button) findViewById(R.id.stop_downlaod_btn);
         mBtnStopDownload.setOnClickListener(this);
+        mBtnDownload1 = (Button) findViewById(R.id.downlaod_btn1);
+        mBtnDownload1.setOnClickListener(this);
+        mBtnStopDownload1 = (Button) findViewById(R.id.stop_downlaod_btn1);
+        mBtnStopDownload1.setOnClickListener(this);
     }
 
 
@@ -35,7 +41,7 @@ public class MainActivity extends Activity implements View.OnClickListener, Down
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.downlaod_btn:
-                downloadImg();
+                DownloadManager.getInstance(this).startDownload(downloadUrl, this);
                 break;
             case R.id.stop_downlaod_btn:
                 /*if(task == null) {
@@ -44,34 +50,40 @@ public class MainActivity extends Activity implements View.OnClickListener, Down
                 task.stopDownload();*/
                 DownloadManager.getInstance(this).pauseDownload(downloadUrl);
                 break;
+            case R.id.downlaod_btn1:
+                DownloadManager.getInstance(this).startDownload(flvUrl, this);
+                break;
+            case R.id.stop_downlaod_btn1:
+                /*if(task == null) {
+                    return;
+                }
+                task.stopDownload();*/
+                DownloadManager.getInstance(this).pauseDownload(flvUrl);
+                break;
             default:
                 break;
         }
     }
 //    DownloadTask task = null;
     String downloadUrl = "http://www.51talk.com/upload/open_pdf/2016/03/01/2016030112545393846.pdf";
-    private void downloadImg() {
-//        String downloadUrl = "http://vf1.mtime.cn/Video/2012/11/17/flv/121117084047608344.flv";
-//        String downloadUrl = "http://www.51talk.com/upload/open_pdf/2016/03/01/2016030112545393846.pdf";
-//        task = DownloadTask.buildTask(this, downloadUrl);
-//        task.startDownload();
-
-        DownloadManager.getInstance(this).startDownload(downloadUrl, this);
-    }
+    String flvUrl = "http://vf1.mtime.cn/Video/2012/11/17/flv/121117084047608344.flv";
 
     @Override
     public void onDownloadFinish(DownloadTask task) {
-        Toast.makeText(getApplicationContext(), "onDownloadFinish", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "onDownloadFinish="+task.downloadUrl, Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onDownloadFinish===downloadUrl="+task.downloadUrl);
     }
 
     @Override
     public void onDownloadStart(DownloadTask task) {
         Toast.makeText(getApplicationContext(), "onDownloadStart", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onDownloadStart===downloadUrl="+task.downloadUrl);
     }
 
     @Override
     public void onDownloadPause(DownloadTask task) {
         Toast.makeText(getApplicationContext(), "onDownloadPause", Toast.LENGTH_SHORT).show();
+        Log.d(TAG, "onDownloadPause===downloadUrl="+task.downloadUrl);
     }
 
     @Override
@@ -85,8 +97,8 @@ public class MainActivity extends Activity implements View.OnClickListener, Down
     }
 
     @Override
-    public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
+    public void onDownloadProgress(DownloadTask task, long finishedSize, long totalSize, long speed) {
 //        Toast.makeText(context, "onDownloadProgress", Toast.LENGTH_SHORT).show();
-        Log.d(TAG, "finishedSize="+finishedSize+"--"+"totalSize"+totalSize);
+        Log.d(TAG, "finishedSize="+finishedSize+"-"+task.downloadUrl+"-"+"totalSize"+totalSize);
     }
 }

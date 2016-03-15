@@ -53,7 +53,7 @@ public class DownloadNotificationListener implements DownloadListener {
     }
 
     @Override
-    public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
+    public void onDownloadProgress(DownloadTask task, long finishedSize, long totalSize, long speed) {
         long percent = finishedSize * 100 / totalSize;
         if (percent - mProgress > 1) { // 降低状态栏进度刷新频率，性能问题
             mProgress = percent;

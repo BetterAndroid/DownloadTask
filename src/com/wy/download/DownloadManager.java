@@ -167,7 +167,7 @@ public class DownloadManager implements DownloadListener{
                     task = (DownloadTask) msg.obj;
                     DownloadListener listener = mDownloadListenerMap.get(task.downloadUrl);
                     if (listener != null) {
-                        listener.onDownloadProgress(task.finishSize, task.totalSize, 0);
+                        listener.onDownloadProgress(task, task.finishSize, task.totalSize, 0);
                     }
                     break;
                 case UI_QUERY_ONE:
@@ -183,6 +183,10 @@ public class DownloadManager implements DownloadListener{
                         }
                         task.targetFile = DownloadTask.setTargetFile(task.dirPath, task.fileName);
                         task.saveFile = DownloadTask.setSaveFile(task.dirPath, task.fileName, downloadUrl);
+                        if(!task.targetFile.exists()) {
+                            task.finishSize = 0;
+
+                        }
                         mDownloadMap.put(downloadUrl, task);
                         task.startDownload();
                     }
@@ -471,7 +475,7 @@ public class DownloadManager implements DownloadListener{
     }
 
     @Override
-    public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
+    public void onDownloadProgress(DownloadTask task, long finishedSize, long totalSize, long speed) {
     }
 
     public static class DownloadCallback {

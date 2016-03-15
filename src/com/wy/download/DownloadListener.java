@@ -39,5 +39,5 @@ public interface DownloadListener {
      * @param totalSize 下载的总大小
      * @param speed 下载速度
      */
-    void onDownloadProgress(long finishedSize, long totalSize, long speed);
+    void onDownloadProgress(DownloadTask task, long finishedSize, long totalSize, long speed);
 }

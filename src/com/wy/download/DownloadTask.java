@@ -65,7 +65,8 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     /**
      * 保存下载文件到本地，默认的地址为/sdcard/download
      */
-    public String dirPath = Environment.getExternalStorageDirectory().getPath() + File.separator +"Download";
+    private static final String DEFAULT_PATH = Environment.getExternalStorageDirectory().getPath() + File.separator +"Download";
+    public String dirPath = DEFAULT_PATH;
 
     public File saveFile;
     public File targetFile;
@@ -142,7 +143,7 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
         long finished = values[1];
         long speed = values[2];
 //        Log.d("DownloadTask", "total="+total+"--finished"+finished+"---speed"+speed);
-        onDownloadProgress(finished, total, speed);
+        onDownloadProgress(this, finished, total, speed);
     }
 
     @Override
@@ -281,10 +282,10 @@ public class DownloadTask extends AsyncTask<Executor, Long, Void> implements Dow
     }
 
     @Override
-    public void onDownloadProgress(long finishedSize, long totalSize, long speed) {
+    public void onDownloadProgress(DownloadTask task, long finishedSize, long totalSize, long speed) {
         this.finishSize = finishedSize;
 //        Toast.makeText(context, "onDownloadProgress", Toast.LENGTH_SHORT).show();
-        Log.d(TAG, "finishedSize="+finishedSize + "---totalSize="+totalSize);
-//        DownloadManager.getInstance(context).updateDownloadTask(this);
+//        Log.d(TAG, "finishedSize="+finishedSize + "---totalSize="+totalSize);
+        DownloadManager.getInstance(context).updateDownloadTask(this);
     }
 }

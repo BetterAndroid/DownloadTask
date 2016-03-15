@@ -2,17 +2,34 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               android:orientation="vertical"
               android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_height="match_parent"
+android:background="#ffffff">
 
     <Button
             android:id="@+id/downlaod_btn" android:layout_width="match_parent"
             android:layout_height="50dp"
+            android:textColor="#000000"
             android:text="下载文件"
     />
 
     <Button
             android:id="@+id/stop_downlaod_btn" android:layout_width="match_parent"
             android:layout_height="50dp"
+            android:textColor="#000000"
+            android:text="停止下载文件"
+    />
+
+    <Button
+            android:id="@+id/downlaod_btn1" android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:textColor="#000000"
+            android:text="下载文件"
+    />
+
+    <Button
+            android:id="@+id/stop_downlaod_btn1" android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:textColor="#000000"
             android:text="停止下载文件"
     />
 </LinearLayout>
